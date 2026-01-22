@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NUST Credential Issuer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f9fafb; }
+        .glass { background: rgba(255,255,255,0.95); }
+        .form-error { color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem; }
+        .webcam-feed { border-radius: 6px; background: #111827; }
+        .webcam-preview { border-radius: 6px; }
+        .hero-wrapper { position: relative; }
+        .hero-glow {
+            display: none; /* Remove colorful glow effects */
+        }
+        .workflow-card {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+        }
+        .workflow-steps {
+            position: relative;
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        .workflow-steps::before {
+            content: '';
+            position: absolute;
+            left: 2.4rem;
+            top: 0.5rem;
+            bottom: 0.5rem;
+            width: 2px;
+            background: #e5e7eb;
+        }
+        .workflow-step {
+            position: relative;
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem 1.25rem 4.5rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            color: #374151;
+            background: #ffffff;
+            opacity: 0;
+            transform: translateY(8px);
+            animation: revealUp 0.6s ease forwards;
+        }
+        .workflow-step::after {
+            content: '';
+            position: absolute;
+            left: 2.45rem;
+            top: calc(100% + 0.2rem);
+            width: 3px;
+            height: 1.5rem;
+            background: rgba(99,102,241,0.35);
+        }
+        .workflow-step:last-child::after { display: none; }
+        .workflow-step-number {
+            position: absolute;
+            left: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #111827;
+            color: #ffffff;
+            border: 2px solid #e5e7eb;
+        }
+        .workflow-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .workflow-step--emerald {
+            background: #ffffff;
+            border-color: #d1d5db;
+        }
+        .workflow-step--emerald .workflow-step-number { background: #059669; color: #fff; border-color: #059669; }
+        .workflow-step--emerald .workflow-chip { background: #ecfdf5; color: #047857; }
+        .workflow-step--amber {
+            background: #ffffff;
+            border-color: #d1d5db;
+        }
+        .workflow-step--amber .workflow-step-number { background: #d97706; color: #fff; border-color: #d97706; }
+        .workflow-step--amber .workflow-chip { background: #fef3c7; color: #92400e; }
+        .workflow-step--violet {
+            background: #ffffff;
+            border-color: #d1d5db;
+        }
+        .workflow-step--violet .workflow-step-number { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+        .workflow-step--violet .workflow-chip { background: #ede9fe; color: #5b21b6; }
+        .workflow-step--sky {
+            background: #ffffff;
+            border-color: #d1d5db;
+        }
+        .workflow-step--sky .workflow-step-number { background: #0284c7; color: #fff; border-color: #0284c7; }
+        .workflow-step--sky .workflow-chip { background: #e0f2fe; color: #075985; }
+        .stats-ribbon {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        @keyframes revealUp {
+            from { opacity: 0; transform: translateY(24px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes cardLift {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .action-card {
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            opacity: 0;
+            transform: translateY(8px);
+            animation: cardLift 0.6s ease forwards;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .action-card:hover { transform: translateY(-1px); border-color: #d1d5db; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); }
+        .action-card--active { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-color: #9ca3af; }
+        .action-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+        }
+        .action-icon--mint { background: #d1fae5; }
+        .action-icon--audit { background: #fef3c7; }
+        .action-icon--security { background: #dbeafe; }
+        .action-icon--manage { background: #fae8ff; }
+        .panel-card {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .panel-card::after {
+            display: none;
+        }
+        .panel-card > * { position: relative; z-index: 1; }
+        .panel-card h2 { color: #111827; }
+        .panel-card p { color: #6b7280; }
+        .field-label {
+            color: #374151;
+            font-weight: 600;
+        }
+        .field-input {
+            width: 100%;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            padding: 0.75rem 1rem;
+            color: #111827;
+            font-size: 0.875rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: #9ca3af;
+            box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.1);
+        }
+        .field-input::placeholder {
+            color: #9ca3af;
+        }
+        @keyframes floatGlow {
+            from { transform: translateY(0px) scale(1); opacity: 0.45; }
+            to { transform: translateY(-35px) scale(1.05); opacity: 0.65; }
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%);
+            color: #1f2937;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .sidebar.closed {
+            transform: translateX(-280px);
+        }
+        
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content.expanded {
+            margin-left: 0;
+        }
+        
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-nav-item:hover {
+            background: rgba(0, 0, 0, 0.1);
+            border-left-color: #4b5563;
+            color: #111827;
+        }
+        
+        .sidebar-nav-item svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-280px);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <!-- Logo Section -->
+        <div class="p-6 border-b border-gray-400">
+            <div class="flex items-center space-x-3">
+                <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="NUST Logo" class="h-12 w-12 rounded-full object-cover bg-white">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">NUST</h1>
+                    <p class="text-xs text-gray-600">Issuer Console</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="py-4">
+            <a href="{{ url_for('issuer.dashboard', view='mint') }}" class="sidebar-nav-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Mint Credential</span>
+            </a>
+            
+            <a href="{{ url_for('issuer.dashboard', view='requests') }}" class="sidebar-nav-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6l8 4-8 4-8-4 8-4zm0 8l8 4-8 4-8-4 8-4z"/></svg>
+                <span>Student Requests</span>
+            </a>
+            
+            <a href="{{ url_for('issuer.dashboard', view='verifications') }}" class="sidebar-nav-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9 9 0 1020.945 13H11z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512"/></svg>
+                <span>Verification Attempts</span>
+            </a>
+            
+            <a href="{{ url_for('issuer.dashboard', view='manage') }}" class="sidebar-nav-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 6h14M5 18h7"/></svg>
+                <span>Search Issuances</span>
+            </a>
+            
+            <div class="border-t border-gray-400 mt-4 pt-4">
+                <a href="{{ url_for('home') }}" class="sidebar-nav-item">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    <span>Back to Main Portal</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+    
+    <!-- Top Header Bar -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <button onclick="toggleSidebar()" class="text-gray-600 hover:text-gray-900 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500">Logged in as</p>
+                        <p class="text-sm font-semibold text-gray-700">{{ current_user.email }}</p>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 rounded transition">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="flex-1">
+    <div class="max-w-6xl mx-auto px-6 py-8 space-y-6 lg:space-y-8">
+        <div class="text-center">
+            <p class="uppercase text-xs tracking-[0.1em] text-gray-600 font-semibold">Issuer Console</p>
+            <h2 class="text-2xl md:text-3xl font-bold mt-2 text-gray-900">NUST Zero-Knowledge Credential Minting</h2>
+            <p class="text-gray-600 mt-1 text-sm">Capture trusted evidence, sign privacy-preserving certificates, and hand them to students.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% set color = 'bg-green-50 border-green-200 text-green-800' %}
+                    {% if category == 'danger' %}
+                        {% set color = 'bg-red-50 border-red-200 text-red-800' %}
+                    {% elif category == 'info' %}
+                        {% set color = 'bg-gray-50 border-gray-200 text-gray-800' %}
+                    {% endif %}
+                    <div class="border {{ color }} px-4 py-3 rounded-lg">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="{{ url_for('issuer.dashboard', view='mint') }}" class="action-card p-5 {{ 'action-card--active' if active_view == 'mint' else '' }}" style="animation-delay: 0.05s;">
+                <div class="action-icon action-icon--mint">
+                    <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                </div>
+                <p class="text-xs uppercase tracking-[0.05em] text-green-700">Issuance</p>
+                <h3 class="text-lg font-semibold text-gray-900">Mint a credential</h3>
+                <p class="text-sm text-gray-700/80">Launch the capture form for a new student.</p>
+            </a>
+            <a href="{{ url_for('issuer.dashboard', view='requests') }}" class="action-card p-5 {{ 'action-card--active' if active_view == 'requests' else '' }}" style="animation-delay: 0.1s; position: relative;">
+                {% if pending_requests|length > 0 %}
+                <span class="absolute top-3 right-3 flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-600 rounded-full">
+                    {{ pending_requests|length }}
+                </span>
+                {% endif %}
+                <div class="action-icon action-icon--security">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6l8 4-8 4-8-4 8-4zm0 8l8 4-8 4-8-4 8-4z"/></svg>
+                </div>
+                <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Queue</p>
+                <h3 class="text-lg font-semibold text-gray-900">Student requests</h3>
+                <p class="text-sm text-gray-700/80">Review pending verification or minting requests.</p>
+            </a>
+            <a href="{{ url_for('issuer.dashboard', view='verifications') }}" class="action-card p-5 {{ 'action-card--active' if active_view == 'verifications' else '' }}" style="animation-delay: 0.25s;">
+                <div class="action-icon action-icon--audit">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9 9 0 1020.945 13H11z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512"/></svg>
+                </div>
+                <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Audit</p>
+                <h3 class="text-lg font-semibold text-gray-900">Verification attempts</h3>
+                <p class="text-sm text-gray-700/80">Review the last proof or session submissions.</p>
+            </a>
+            <a href="{{ url_for('issuer.dashboard', view='manage') }}" class="action-card p-5 {{ 'action-card--active' if active_view == 'manage' else '' }}" style="animation-delay: 0.35s;">
+                <div class="action-icon action-icon--manage">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 6h14M5 18h7"/></svg>
+                </div>
+                <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Records</p>
+                <h3 class="text-lg font-semibold text-gray-900">Search issuances</h3>
+                <p class="text-sm text-gray-700/80">Filter, refresh, or revoke stored credentials.</p>
+            </a>
+        </div>
+
+        <div class="stats-ribbon grid gap-4 md:grid-cols-2 lg:grid-cols-3 p-4 text-gray-900">
+            <div class="rounded-lg border border-gray-300/10 bg-white/5 px-4 py-3">
+                <p class="text-xs uppercase tracking-[0.05em] text-gray-700/90">Total minted</p>
+                <p class="text-2xl font-semibold mt-2">{{ stats.all }}</p>
+                <p class="text-xs text-gray-600">All credential records stored on this issuer node.</p>
+            </div>
+            <div class="rounded-lg border border-gray-300/10 bg-white/5 px-4 py-3">
+                <p class="text-xs uppercase tracking-[0.05em] text-green-700/90">Active</p>
+                <p class="text-2xl font-semibold mt-2 text-gray-700">{{ stats.active }}</p>
+                <p class="text-xs text-gray-600">Currently valid and revocation-free credentials.</p>
+            </div>
+            <div class="rounded-lg border border-gray-300/10 bg-white/5 px-4 py-3">
+                <p class="text-xs uppercase tracking-[0.05em] text-gray-600/90">Verifications</p>
+                <p class="text-2xl font-semibold mt-2">{{ verifications|length }}</p>
+                <p class="text-xs text-gray-600">Last proof attempts stored in the audit log.</p>
+            </div>
+        </div>
+
+        <section class="panel-card rounded-lg p-6 shadow-2xl">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Security Analytics</p>
+                    <h2 class="text-2xl font-semibold text-gray-900 mt-1">Issuer intelligence dashboard</h2>
+                </div>
+                <a href="{{ url_for('issuer.export_security_events') }}" class="text-xs font-semibold px-4 py-2 rounded-full border border-gray-300/60 text-sky-100 hover:bg-gray-100/20">Export security log</a>
+            </div>
+            <div class="grid md:grid-cols-2 gap-4 mt-6">
+                <div class="rounded-lg p-4 border border-indigo-500/30 bg-gray-500/10">
+                    <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Events (7d)</p>
+                    <ul class="mt-3 space-y-2 text-sm text-gray-900">
+                        {% if event_counts %}
+                            {% for event in event_counts %}
+                                <li class="flex justify-between"><span>{{ event.event_type.replace('_', ' ')|title }}</span><span class="font-semibold text-gray-900">{{ event.count }}</span></li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="text-gray-600">No recorded events.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="rounded-lg p-4 border border-green-500/30 bg-emerald-500/10">
+                    <p class="text-xs uppercase tracking-[0.05em] text-green-700">Daily Issuance</p>
+                    <ul class="mt-3 space-y-2 text-sm text-gray-900">
+                        {% if daily_issuance %}
+                            {% for day in daily_issuance %}
+                                <li class="flex justify-between"><span>{{ day.day }}</span><span class="font-semibold text-gray-900">{{ day.count }}</span></li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="text-gray-600">No issuances in the last week.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <!-- Recent security events removed per earlier UI request -->
+        </section>
+
+        {% if active_view == 'mint' %}
+        <section class="panel-card rounded-lg p-6 shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.05em] text-emerald-300">Issuance</p>
+            <h2 class="text-2xl font-semibold mt-2">Mint a new credential</h2>
+            <p class="text-xs text-gray-700/80 mt-1">Authentication keys generate automatically during minting. Share the key with the student immediately after issuance.</p>
+            <form class="mt-6 space-y-4" method="POST" enctype="multipart/form-data" action="{{ url_for('issuer.dashboard', view='mint') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            {{ form.student_id.label(class='block text-sm font-semibold field-label mb-1') }}
+                            {{ form.student_id(class='field-input') }}
+                            {% for error in form.student_id.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div>
+                            {{ form.program.label(class='block text-sm font-semibold field-label mb-1') }}
+                            {{ form.program(class='field-input') }}
+                            {% for error in form.program.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            {{ form.first_name.label(class='block text-sm font-semibold field-label mb-1') }}
+                            {{ form.first_name(class='field-input') }}
+                            {% for error in form.first_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div>
+                            {{ form.last_name.label(class='block text-sm font-semibold field-label mb-1') }}
+                            {{ form.last_name(class='field-input') }}
+                            {% for error in form.last_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        {{ form.issuer_notes.label(class='block text-sm font-semibold field-label mb-1') }}
+                        {{ form.issuer_notes(class='field-input', rows='3') }}
+                        {% for error in form.issuer_notes.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div>
+                        {{ form.id_document.label(class='block text-sm font-semibold field-label mb-1') }}
+                        {{ form.id_document(class='w-full text-sm text-gray-900 bg-gray-100/40 border border-gray-300 rounded-lg px-4 py-3 file:mr-4 file:rounded-full file:border-0 file:bg-gray-200/20 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-indigo-400/30') }}
+                        {% for error in form.id_document.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div>
+                        {{ form.selfie_image_base64() }}
+                        <label class="block text-sm font-semibold field-label mb-1">Capture live selfie</label>
+                        <div id="issuer-video-container" class="webcam-feed overflow-hidden">
+                            <video id="issuer-video" autoplay playsinline class="w-full h-96 object-cover"></video>
+                        </div>
+                        <div id="issuer-preview-container" class="hidden mt-3">
+                            <img id="issuer-preview" class="webcam-preview w-full h-96 object-cover" />
+                            <p class="text-xs text-gray-600 mt-1">Captured frame locked. Retake if needed.</p>
+                        </div>
+                        <canvas id="issuer-canvas" class="hidden"></canvas>
+                        <div class="flex gap-3 mt-3">
+                            <button type="button" id="issuer-capture" class="flex-1 bg-gray-900 text-white font-semibold py-2.5 rounded-lg shadow hover:bg-gray-800 transition">Capture</button>
+                            <button type="button" id="issuer-retake" class="flex-1 bg-gray-600 text-white font-semibold py-2.5 rounded-lg shadow hover:bg-gray-700 transition hidden">Retake</button>
+                        </div>
+                        {% for error in form.selfie_image_base64.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                    </div>
+                    {{ form.submit(class='w-full bg-gray-900 text-white font-semibold py-3 rounded-lg shadow hover:bg-gray-800 transition cursor-pointer') }}
+                </form>
+
+            {% if issued_credential %}
+            <section class="panel-card rounded-lg p-6 shadow-2xl border border-green-400/30 mt-6">
+                <p class="text-xs uppercase tracking-[0.05em] text-emerald-300">Fresh Credential</p>
+                <h2 class="text-2xl font-semibold text-gray-900 mt-2">Share the secure package with the student</h2>
+                <div class="mt-4 grid md:grid-cols-2 gap-4">
+                    <div class="bg-gray-50/60 text-gray-700 p-4 rounded-lg text-sm overflow-auto max-h-64 border border-green-500/20">
+                        <pre class="whitespace-pre-wrap">{{ issued_credential.payload | tojson(indent=2) }}</pre>
+                    </div>
+                    <div class="bg-gray-100/50 rounded-lg p-4 border border-green-300/30 space-y-3 text-gray-900">
+                        <p class="text-xs uppercase tracking-[0.05em] text-green-700">Signature</p>
+                        <p class="font-mono text-xs break-all mt-2 text-gray-700">{{ issued_credential.signature }}</p>
+                        <a href="{{ issued_credential.download_url }}" class="inline-flex items-center mt-4 text-green-700 font-semibold hover:text-gray-700">Download credential JSON →</a>
+                        <p class="text-xs text-gray-600">Hand this file to the student over a secure channel (USB, QR, encrypted email).</p>
+                        {% if issued_credential.expires_at %}
+                            <p class="text-xs text-green-700 font-semibold">Valid until {{ issued_credential.expires_at.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+                        {% endif %}
+                        <div class="text-sm text-gray-700 space-y-1">
+                            <p><span class="font-semibold text-gray-900">Certificate ID:</span> {{ issued_credential.certificate_id }}</p>
+                            <p><span class="font-semibold text-gray-900">Authentication Key:</span> {{ issued_credential.auth_key }}</p>
+                        </div>
+                        {% if issued_credential.wallet_qr_url %}
+                        <div class="flex gap-4 items-center rounded-lg border border-green-400/40 bg-emerald-500/10 p-3">
+                            <img src="{{ issued_credential.wallet_qr_url }}" alt="Wallet QR" class="w-24 h-24 rounded-lg bg-white/90" />
+                            <div class="text-sm text-gray-700 space-y-2">
+                                <p class="font-semibold text-gray-900">Student Wallet</p>
+                                <p class="text-xs text-gray-700">Share this wallet link so the student can load their credential and kick off the verification flow on any device.</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ issued_credential.wallet_url }}" target="_blank" class="text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 text-gray-900 hover:from-emerald-300 hover:to-emerald-500">Open Wallet</a>
+                                    <button type="button" data-copy-wallet data-wallet-link="{{ issued_credential.wallet_url_external }}" class="text-xs font-semibold px-3 py-1 rounded-full border border-green-300/60 text-gray-700 hover:bg-green-100/20">Copy Link</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% set face = issued_credential.payload.get('face_evidence', {}) %}
+                        <div class="rounded-lg border border-slate-500/40 bg-gray-100/60 p-3 space-y-3">
+                            <div>
+                                {{ form.valid_days.label(class='block text-sm font-semibold field-label mb-1') }}
+                                {{ form.valid_days(class='field-input bg-gray-100/40') }}
+                                {% for error in form.valid_days.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                            </div>
+                            <p class="text-xs uppercase tracking-[0.05em] text-gray-700/80">Face Diagnostics</p>
+                            {% if face.status == 'completed' %}
+                                <p class="text-sm text-gray-700 mt-1">Distance: <span class="font-semibold text-gray-900">{{ face.distance }}</span></p>
+                                <p class="text-sm text-gray-700">Confidence: <span class="font-semibold text-gray-900">{{ face.confidence|capitalize }}</span></p>
+                                <p class="text-xs text-gray-500">Scores &lt; 0.60 are considered a match.</p>
+                            {% elif face.status == 'error' %}
+                                <p class="text-sm text-red-700 mt-1">Diagnostics failed: {{ face.error }}</p>
+                            {% else %}
+                                <p class="text-sm text-gray-500 mt-1">Diagnostics unavailable.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+        </section>
+
+        {% elif active_view == 'requests' %}
+        <section class="panel-card rounded-lg p-6 shadow-2xl">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Student requests</p>
+                    <h2 class="text-2xl font-semibold text-gray-900 mt-2">Pending verification requests</h2>
+                    <p class="text-xs text-gray-700/80 mt-1">These students submitted the public form requesting a credential.</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-semibold text-gray-900">{{ pending_requests|length }} awaiting review</p>
+                    <p class="text-[11px] text-gray-500">Mark handled once scheduled.</p>
+                </div>
+            </div>
+            <div class="mt-6 space-y-3">
+                {% for request in pending_requests %}
+                <div class="rounded-lg border border-gray-300/10 bg-white/5 p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between" data-request-card>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">{{ request.first_name }} {{ request.last_name }} <span class="text-xs text-gray-500">({{ request.student_id }})</span></p>
+                        <p class="text-xs text-gray-600">Section {{ request.section or 'N/A' }} • {{ request.email }}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ request.notes or 'No additional context provided.' }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[11px] text-gray-500">{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <button type="button"
+                                class="mt-2 text-xs font-semibold px-4 py-2 rounded-full border border-green-400/60 text-gray-700 hover:bg-green-100/20"
+                                data-handle-request
+                                data-student-id="{{ request.student_id }}"
+                                data-first-name="{{ request.first_name }}"
+                                data-last-name="{{ request.last_name }}"
+                                data-section="{{ request.section or '' }}"
+                                data-email="{{ request.email }}"
+                                data-endpoint="{{ url_for('issuer.resolve_request', request_id=request.id) }}">
+                            Handle
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                <p class="text-sm text-gray-600" data-request-empty {% if pending_requests %}style="display:none"{% endif %}>
+                    No pending requests right now. New submissions will appear here automatically.
+                </p>
+            </div>
+        </section>
+
+        {% endif %}
+
+        {% if active_view == 'verifications' %}
+        <section class="panel-card rounded-lg p-6 shadow-2xl">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Audit Trail</p>
+                    <h2 class="text-2xl font-semibold text-gray-900 mt-1">Credential verification attempts</h2>
+                </div>
+                <p class="text-xs text-gray-700/80">Logging last {{ verifications|length }} events</p>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+                <table class="min-w-full text-left text-sm text-gray-700/80">
+                    <thead class="text-xs uppercase tracking-widest text-gray-600/80">
+                        <tr>
+                            <th class="pb-3 text-left">Student / Credential</th>
+                            <th class="pb-3 text-left">Verified</th>
+                            <th class="pb-3 text-left">Expires</th>
+                            <th class="pb-3 text-left">Status</th>
+                            <th class="pb-3 text-left">Session Token</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for verification in verifications %}
+                        {% set cred = verification.credential %}
+                        <tr class="border-t border-gray-300/10">
+                            <td class="py-3">
+                                {% if cred %}
+                                    {% set meta = cred.meta_blob or {} %}
+                                    <p class="font-semibold text-gray-900">{{ meta.get('first_name', 'Unknown') }} {{ meta.get('last_name', '') }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ verification.student_id }}
+                                        {% if cred.credential_hash %}
+                                            • {{ cred.credential_hash[:10] }}…
+                                        {% endif %}
+                                    </p>
+                                {% else %}
+                                    <p class="font-semibold text-gray-900">{{ verification.student_id }}</p>
+                                    <p class="text-xs text-gray-500">Credential missing</p>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 text-gray-600">{{ verification.verified_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="py-3 text-gray-600">{{ verification.expires_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="py-3">
+                                {% if verification.consumed_at %}
+                                    <span class="text-xs font-semibold text-green-700 bg-emerald-500/20 px-3 py-1 rounded-full" title="Consumed {{ verification.consumed_at.strftime('%Y-%m-%d %H:%M') }}">Consumed</span>
+                                {% elif verification.expires_at < now %}
+                                    <span class="text-xs font-semibold text-red-700 bg-rose-500/20 px-3 py-1 rounded-full">Expired</span>
+                                {% else %}
+                                    <span class="text-xs font-semibold text-gray-600 bg-amber-500/20 px-3 py-1 rounded-full">Active</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 font-mono text-xs text-gray-600">{{ verification.session_token }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-gray-400">No verifications recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+
+        {% if active_view == 'manage' %}
+        <section class="panel-card rounded-lg p-6 shadow-2xl">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Latest Certificates</p>
+                    <h2 class="text-2xl font-semibold text-gray-900 mt-1">Search & manage issuances</h2>
+                </div>
+                <div class="text-right text-xs text-gray-700/80">
+                    <p>Active: {{ stats.active }} • Revoked: {{ stats.revoked }}</p>
+                    <p>Total stored: {{ stats.all }}</p>
+                </div>
+            </div>
+            <form method="GET" action="{{ url_for('issuer.dashboard') }}" class="mt-6 grid gap-3 md:grid-cols-[2fr,1fr,auto]">
+                <input type="hidden" name="view" value="manage" />
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search by student ID, name, or signature fragment" class="field-input" />
+                <select name="status" class="field-input bg-transparent">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All ({{ stats.all }})</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active ({{ stats.active }})</option>
+                    <option value="revoked" {% if status_filter == 'revoked' %}selected{% endif %}>Revoked ({{ stats.revoked }})</option>
+                </select>
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-500 text-gray-900 font-semibold rounded-lg px-4 py-3 shadow hover:from-indigo-400 hover:via-sky-400 hover:to-cyan-400 transition">Apply</button>
+                    <a href="{{ url_for('issuer.dashboard', view='manage') }}" class="flex-1 text-gray-900 font-semibold rounded-lg px-4 py-3 text-center border border-gray-300/20 hover:bg-gray-50/10 transition">Reset</a>
+                </div>
+            </form>
+            <p class="mt-3 text-xs text-gray-700/80">Showing {{ credentials|length }} result(s).</p>
+            <div class="mt-4 overflow-x-auto">
+                <table class="min-w-full text-left text-sm text-gray-700/80">
+                    <thead class="text-xs uppercase tracking-widest text-gray-600/80">
+                        <tr>
+                            <th class="pb-3">Student</th>
+                            <th class="pb-3">Program</th>
+                            <th class="pb-3">Issued</th>
+                            <th class="pb-3">Certificate</th>
+                            <th class="pb-3">Expires</th>
+                            <th class="pb-3">Face Confidence</th>
+                            <th class="pb-3">Status</th>
+                            <th class="pb-3">Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for credential in credentials %}
+                        {% set meta = credential.meta_blob or {} %}
+                        {% set face = meta.get('face_evidence', {}) %}
+                        <tr class="border-t border-gray-300/10" id="credential-row-{{ credential.id }}">
+                            <td class="py-3 font-semibold text-gray-900">
+                                {{ meta.get('first_name', 'Unknown') }} {{ meta.get('last_name', '') }}
+                                <br><span class="text-xs text-gray-500">{{ credential.student_id }}</span>
+                            </td>
+                            <td class="py-3 text-gray-600">{{ meta.get('program', '—') }}</td>
+                            <td class="py-3 text-gray-600">{{ credential.issued_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="py-3 text-xs font-mono text-gray-600">{{ credential.certificate_id or '—' }}</td>
+                            <td class="py-3 text-gray-600">{{ credential.expires_at.strftime('%Y-%m-%d %H:%M') if credential.expires_at else '—' }}</td>
+                            <td class="py-3">
+                                {% if face.status == 'completed' %}
+                                    {% set pill_classes = 'text-xs font-semibold px-3 py-1 rounded-full' %}
+                                    {% if face.confidence == 'high' %}
+                                        {% set pill_classes = pill_classes + ' bg-emerald-500/20 text-green-700' %}
+                                    {% elif face.confidence == 'medium' %}
+                                        {% set pill_classes = pill_classes + ' bg-amber-500/20 text-gray-600' %}
+                                    {% else %}
+                                        {% set pill_classes = pill_classes + ' bg-rose-500/25 text-red-700' %}
+                                    {% endif %}
+                                    <span class="{{ pill_classes }}" title="Distance: {{ face.distance }}">{{ face.confidence|capitalize }}</span>
+                                {% elif face.status == 'error' %}
+                                    <span class="text-xs font-semibold text-red-700" title="{{ face.error }}">Error</span>
+                                {% else %}
+                                    <span class="text-xs text-gray-400">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                {% if credential.revoked %}
+                                    <span id="credential-status-{{ credential.id }}" class="text-xs font-semibold text-red-700 bg-rose-500/25 px-3 py-1 rounded-full">Revoked</span>
+                                {% else %}
+                                    <span id="credential-status-{{ credential.id }}" class="text-xs font-semibold text-green-700 bg-emerald-500/20 px-3 py-1 rounded-full">Active</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ url_for('issuer.download_credential', credential_id=credential.id) }}"
+                                       class="text-xs font-semibold px-4 py-2 rounded-full border border-gray-300/20 text-gray-900 hover:bg-gray-50/10"
+                                       target="_blank" rel="noopener">
+                                        Download
+                                    </a>
+                                    <a href="{{ url_for('wallet.view_wallet', credential_hash=credential.credential_hash) }}"
+                                       class="text-xs font-semibold px-4 py-2 rounded-full border border-green-400/60 text-gray-700 hover:bg-green-100/20"
+                                       target="_blank" rel="noopener">
+                                        Wallet
+                                    </a>
+                                    <button type="button"
+                                        class="text-xs font-semibold px-4 py-2 rounded-full border border-gray-300/60 text-gray-700 hover:bg-gray-500/20"
+                                        data-refresh-credential
+                                        data-endpoint="{{ url_for('issuer.refresh_credential', credential_id=credential.id) }}">
+                                        Refresh
+                                    </button>
+                                    <button type="button"
+                                        class="text-xs font-semibold px-4 py-2 rounded-full border transition {{ 'bg-rose-600/80 text-gray-900 border-rose-400 hover:bg-rose-600/60' if not credential.revoked else 'bg-emerald-500/20 text-gray-700 border-green-400/60 hover:bg-green-100/30' }}"
+                                        data-toggle-credential
+                                        data-endpoint="{{ url_for('issuer.toggle_credential', credential_id=credential.id) }}">
+                                        {% if credential.revoked %}Restore{% else %}Revoke{% endif %}
+                                    </button>
+                                    <button type="button"
+                                        class="text-xs font-semibold px-4 py-2 rounded-full border border-rose-400/60 text-rose-100 hover:bg-red-100/20"
+                                        data-delete-credential
+                                        data-endpoint="{{ url_for('issuer.delete_credential', credential_id=credential.id) }}"
+                                        data-target-row="credential-row-{{ credential.id }}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="py-6 text-center text-gray-400">No credentials matched your filters.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+    <script>
+        const video = document.getElementById('issuer-video');
+        const captureBtn = document.getElementById('issuer-capture');
+        const retakeBtn = document.getElementById('issuer-retake');
+        const previewContainer = document.getElementById('issuer-preview-container');
+        const previewImg = document.getElementById('issuer-preview');
+        const videoContainer = document.getElementById('issuer-video-container');
+        const canvas = document.getElementById('issuer-canvas');
+        const hiddenInput = document.querySelector('[name="selfie_image_base64"]');
+        let stream = null;
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+                video.srcObject = stream;
+            } catch (error) {
+                console.error('Webcam error', error);
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        captureBtn?.addEventListener('click', () => {
+            if (!stream) { return; }
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            hiddenInput.value = dataUrl;
+            previewImg.src = dataUrl;
+            previewContainer.classList.remove('hidden');
+            videoContainer.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            retakeBtn.classList.remove('hidden');
+            stopCamera();
+        });
+
+        retakeBtn?.addEventListener('click', () => {
+            hiddenInput.value = '';
+            previewContainer.classList.add('hidden');
+            videoContainer.classList.remove('hidden');
+            captureBtn.classList.remove('hidden');
+            retakeBtn.classList.add('hidden');
+            startCamera();
+        });
+
+        startCamera();
+        window.addEventListener('beforeunload', stopCamera);
+
+        document.querySelectorAll('[data-toggle-credential]')?.forEach(button => {
+            button.addEventListener('click', async () => {
+                const endpoint = button.dataset.endpoint;
+                if (!endpoint) { return; }
+
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = 'Updating...';
+
+                try {
+                    const response = await fetch(endpoint, { method: 'POST' });
+                    const payload = await response.json();
+                    if (!payload.ok) {
+                        throw new Error(payload.error || 'Update failed');
+                    }
+
+                    const pill = document.getElementById(`credential-status-${payload.credential_id}`);
+                    if (pill) {
+                        if (payload.revoked) {
+                            pill.textContent = 'Revoked';
+                            pill.className = 'text-xs font-semibold text-red-700 bg-rose-500/25 px-3 py-1 rounded-full';
+                        } else {
+                            pill.textContent = 'Active';
+                            pill.className = 'text-xs font-semibold text-green-700 bg-emerald-500/20 px-3 py-1 rounded-full';
+                        }
+                    }
+
+                    if (payload.revoked) {
+                        button.className = 'text-xs font-semibold px-4 py-2 rounded-full border transition bg-emerald-500/20 text-gray-700 border-green-400/60 hover:bg-green-100/30';
+                        button.textContent = 'Restore';
+                    } else {
+                        button.className = 'text-xs font-semibold px-4 py-2 rounded-full border transition bg-rose-600/80 text-gray-900 border-rose-400 hover:bg-rose-600/60';
+                        button.textContent = 'Revoke';
+                    }
+                } catch (error) {
+                    console.error(error);
+                    if (error?.message) {
+                        alert(error.message);
+                    }
+                    button.textContent = 'Retry';
+                } finally {
+                    button.disabled = false;
+                }
+            });
+        });
+
+        const updateRequestEmptyState = () => {
+            const emptyMessage = document.querySelector('[data-request-empty]');
+            if (!emptyMessage) { return; }
+            const hasCards = document.querySelectorAll('[data-request-card]').length > 0;
+            emptyMessage.style.display = hasCards ? 'none' : '';
+        };
+        updateRequestEmptyState();
+
+        // Auto-fill form if data exists in sessionStorage
+        const pendingFill = sessionStorage.getItem('pendingRequestFill');
+        if (pendingFill) {
+            const data = JSON.parse(pendingFill);
+            sessionStorage.removeItem('pendingRequestFill');
+            
+            // Wait for form to be available
+            setTimeout(() => {
+                const studentIdInput = document.querySelector('input[name="student_id"]');
+                const firstNameInput = document.querySelector('input[name="first_name"]');
+                const lastNameInput = document.querySelector('input[name="last_name"]');
+                const issuerNotesInput = document.querySelector('textarea[name="issuer_notes"]');
+                
+                if (studentIdInput) studentIdInput.value = data.studentId;
+                if (firstNameInput) firstNameInput.value = data.firstName;
+                if (lastNameInput) lastNameInput.value = data.lastName;
+                if (issuerNotesInput && data.section) {
+                    issuerNotesInput.value = `Section: ${data.section}`;
+                }
+                
+                // Scroll to form
+                const mintSection = document.querySelector('section.panel-card');
+                if (mintSection) {
+                    mintSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+
+        document.querySelectorAll('[data-handle-request]')?.forEach(button => {
+            button.addEventListener('click', async () => {
+                const endpoint = button.dataset.endpoint;
+                const studentId = button.dataset.studentId;
+                const firstName = button.dataset.firstName;
+                const lastName = button.dataset.lastName;
+                const section = button.dataset.section;
+                
+                const card = button.closest('[data-request-card]');
+                
+                // Change button to "Done" immediately
+                button.textContent = 'Done';
+                button.classList.remove('hover:bg-green-100/20');
+                button.classList.add('bg-green-500/20');
+                button.disabled = true;
+                
+                // Store data for auto-fill after navigation
+                sessionStorage.setItem('pendingRequestFill', JSON.stringify({
+                    studentId,
+                    firstName,
+                    lastName,
+                    section
+                }));
+                
+                // Resolve the request in background
+                if (endpoint) {
+                    try {
+                        await fetch(endpoint, { method: 'POST' });
+                    } catch (error) {
+                        console.error('Failed to resolve request:', error);
+                    }
+                }
+                
+                // Navigate to mint view
+                window.location.href = '{{ url_for("issuer.dashboard", view="mint") }}';
+            });
+        });
+
+        document.querySelectorAll('[data-copy-wallet]')?.forEach(button => {
+            button.addEventListener('click', async () => {
+                const link = button.dataset.walletLink;
+                if (!link || !navigator.clipboard) { return; }
+                const original = button.textContent;
+                try {
+                    await navigator.clipboard.writeText(link);
+                    button.textContent = 'Copied!';
+                    setTimeout(() => button.textContent = original, 1500);
+                } catch (err) {
+                    console.error('Clipboard error', err);
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-delete-credential]')?.forEach(button => {
+            button.addEventListener('click', async () => {
+                if (!confirm('Delete this credential record? This cannot be undone.')) {
+                    return;
+                }
+
+                const endpoint = button.dataset.endpoint;
+                const targetRowId = button.dataset.targetRow;
+                if (!endpoint) { return; }
+
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = 'Deleting...';
+
+                try {
+                    const response = await fetch(endpoint, { method: 'POST' });
+                    const payload = await response.json();
+                    if (!payload.ok) {
+                        throw new Error(payload.error || 'Delete failed');
+                    }
+
+                    const row = document.getElementById(targetRowId);
+                    row?.remove();
+                } catch (error) {
+                    console.error(error);
+                    button.textContent = 'Retry';
+                } finally {
+                    button.disabled = false;
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 1200);
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-refresh-credential]')?.forEach(button => {
+            button.addEventListener('click', async () => {
+                const endpoint = button.dataset.endpoint;
+                if (!endpoint) { return; }
+
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = 'Refreshing...';
+
+                try {
+                    const response = await fetch(endpoint, { method: 'POST' });
+                    const payload = await response.json();
+                    if (!payload.ok) {
+                        throw new Error(payload.error || 'Refresh failed');
+                    }
+                    if (payload.download_url) {
+                        window.open(payload.download_url, '_blank');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    button.textContent = 'Retry';
+                } finally {
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.disabled = false;
+                    }, 1000);
+                }
+            });
+        });
+        
+        // Sidebar Toggle Function
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.getElementById('mainContent');
+            
+            sidebar.classList.toggle('closed');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            mainContent.classList.toggle('expanded');
+        }
+    </script>
+    
+    </div> <!-- End max-w-6xl -->
+    </div> <!-- End flex-1 -->
+    </div> <!-- End main-content -->
+    
+    <!-- Footer with Contact Details -->
+    <footer class="bg-gray-100 text-gray-900 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- About Section -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-900">NUST Credential Portal</h3>
+                    <p class="text-sm text-gray-600">
+                        Zero-Knowledge Credential Issuance System<br>
+                        School of Electrical Engineering and Computer Science (SEECS)<br>
+                        National University of Sciences and Technology
+                    </p>
+                </div>
+                
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-900">Quick Links</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><a href="{{ url_for('issuer.dashboard') }}" class="hover:text-gray-900 transition">Issuer Console</a></li>
+                        <li><a href="https://nust.edu.pk" target="_blank" class="hover:text-gray-900 transition">NUST Website</a></li>
+                        <li><a href="https://seecs.nust.edu.pk" target="_blank" class="hover:text-gray-900 transition">SEECS Website</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Contact Information -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-900">Contact Us</h3>
+                    <ul class="space-y-3 text-sm text-gray-600">
+                        <li class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            <a href="mailto:credentials@seecs.edu.pk" class="hover:text-gray-900 transition">credentials@seecs.edu.pk</a>
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.040A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            <span>Secure Credential Verification</span>
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>H-12, Islamabad, Pakistan</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-300 mt-8 pt-8 text-center text-sm text-gray-600">
+                <p>&copy; 2025 NUST Credential Portal - Secure Certificate Issuance System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

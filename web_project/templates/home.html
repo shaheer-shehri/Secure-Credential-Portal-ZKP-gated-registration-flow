@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NUST Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Professional corporate font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 360px;
+            background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%);
+            color: #1f2937;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .sidebar.closed {
+            transform: translateX(-360px);
+        }
+        
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
+        }
+        
+        .main-content {
+            margin-left: 360px;
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content.expanded {
+            margin-left: 0;
+        }
+        
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-nav-item:hover {
+            background: rgba(0, 0, 0, 0.1);
+            border-left-color: #4b5563;
+            color: #111827;
+        }
+        
+        .sidebar-nav-item svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+        }
+        
+        .page-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-360px);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        .info-card {
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-card--soft {
+            background: #f9fafb;
+            border-color: #e5e7eb;
+        }
+
+        .info-card--dark {
+            background: #1f2937;
+            border-color: #374151;
+            color: #f3f4f6;
+        }
+
+        .info-card + .info-card {
+            margin-top: 1rem;
+        }
+
+        .app-background {
+            background: #f3f4f6;
+        }
+
+        .step-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .info-card--dark .step-pill {
+            color: #9ca3af;
+        }
+
+        .cta-btn {
+            width: 100%;
+            border-radius: 6px;
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+
+        .cta-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .cta-btn--primary {
+            background: #111827;
+            color: #fff;
+            border-color: #111827;
+        }
+
+        .cta-btn--primary:hover:not(:disabled) {
+            background: #1f2937;
+            border-color: #1f2937;
+        }
+
+        .cta-btn--ghost-primary {
+            background: #fff;
+            color: #111827;
+            border: 1px solid #d1d5db;
+        }
+
+        .cta-btn--ghost-primary:hover:not(:disabled) {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .cta-btn--success {
+            background: #059669;
+            color: #fff;
+            border-color: #059669;
+        }
+
+        .cta-btn--success:hover:not(:disabled) {
+            background: #047857;
+            border-color: #047857;
+        }
+
+        .cta-btn--ghost {
+            background: #fff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .cta-btn--ghost:hover:not(:disabled) {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .cta-btn--terminal {
+            background: #ffffff;
+            color: #111827;
+            border: 1px solid #d1d5db;
+            font-size: 0.875rem;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .cta-btn--terminal:hover:not(:disabled) {
+            background: #f9fafb;
+        }
+
+        .primary-nav-btn {
+            background: #fff;
+            color: #111827;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            padding: 1rem 1.25rem;
+            transition: all 0.15s ease;
+        }
+
+        .primary-nav-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 9999px;
+            animation: spin 0.8s linear infinite;
+        }
+    </style>
+    {% if zk_manifest %}
+    <script>
+        window.__ZK_CONFIG__ = {{ zk_manifest|tojson }};
+    </script>
+    {% if zk_manifest.browserProver %}
+    <script src="https://cdn.jsdelivr.net/npm/snarkjs@0.7.4/dist/snarkjs.min.js"></script>
+    {% endif %}
+    {% endif %}
+</head>
+<body class="bg-gray-50">
+    {% set proof_mode = zk_manifest.proofType if zk_manifest else 'placeholder' %}
+    
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <!-- Logo Section -->
+        <div class="p-6 border-b border-gray-400">
+            <div class="flex items-center space-x-3">
+                <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="NUST Logo" class="h-12 w-12 rounded-full object-cover bg-white">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">NUST</h1>
+                    <p class="text-xs text-gray-600">Credential Portal</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="py-4">
+            <div class="sidebar-nav-item" onclick="showPage('page-main-menu')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Dashboard</span>
+            </div>
+            
+            <div class="sidebar-nav-item" onclick="showPage('page-login')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                <span>My Account</span>
+            </div>
+            
+            <div class="sidebar-nav-item" onclick="showPage('page-credential')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.040A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <span>Certificates</span>
+            </div>
+            
+            <div class="sidebar-nav-item" onclick="showPage('page-signup-start')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                <span>Create Account</span>
+            </div>
+            
+            <div class="sidebar-nav-item" onclick="showPage('page-verification-request')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <span>Request Verification</span>
+            </div>
+            
+            <div class="sidebar-nav-item" onclick="showPage('page-password-start')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                <span>Password Reset</span>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+            <div class="px-6 py-4 flex items-center justify-between">
+                <button onclick="toggleSidebar()" class="text-gray-600 hover:text-gray-900 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="text-sm text-gray-600">December 11, 2025 13:10:10</div>
+            </div>
+        </header>
+        
+        <!-- Flask Flashed Messages -->
+        <div class="px-6 py-4" id="flash-root">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {% set color = 'blue' %}
+                        {% if category == 'success' %}{% set color = 'green' %}{% endif %}
+                        {% if category == 'danger' %}{% set color = 'red' %}{% endif %}
+                        
+                        <div class="mb-4 p-4 bg-{{color}}-50 border-l-4 border-{{color}}-400 rounded" role="alert">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    {% if category == 'success' %}
+                                    <svg class="w-5 h-5 text-{{color}}-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    {% else %}
+                                    <svg class="w-5 h-5 text-{{color}}-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="font-semibold text-{{color}}-800">{{ category.title() }}</p>
+                                    <p class="text-sm text-{{color}}-700">{{ message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        <!-- Pages Container -->
+        <div class="flex-1 px-6 pb-6">
+        <div class="page-container">
+        
+        <!-- 
+          Page 1: Main Menu (Default View)
+        -->
+        <div id="page-main-menu" class="page">
+             <div class="p-6 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+                <h1 class="text-2xl font-semibold text-gray-900">Welcome to NUST Credential Portal</h1>
+                <p class="text-sm text-gray-600 mt-2">Secure credential issuance and verification system</p>
+            </div>
+            
+            <div class="p-6 md:p-8 pt-0 space-y-4">
+                <!-- Button 1: Portal (Login) -->
+                <button onclick="showPage('page-login')" class="primary-nav-btn w-full flex items-center justify-between font-semibold focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-40">
+                    <span class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                        Portal Login
+                    </span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+
+                <button onclick="showPage('page-credential')" class="primary-nav-btn w-full flex items-center justify-between font-semibold focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-40">
+                    <span class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"></path></svg>
+                        Verify NUST Credential (ZK)
+                    </span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+
+                <!-- Button 2: Sign Up -->
+                <button onclick="showPage('page-signup-start')" class="primary-nav-btn w-full flex items-center justify-between font-semibold focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-40">
+                    <span class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        Sign Up / Register
+                    </span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+
+                <!-- Button 3: Password Reset -->
+                <button onclick="showPage('page-password-start')" class="primary-nav-btn w-full flex items-center justify-between font-semibold focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-40">
+                    <span class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-2h2v-2h2v-2h2v2h2v-2.258A6 6 0 0115 7z"></path></svg>
+                        Automated Password Reset
+                    </span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="page-credential" class="page hidden">
+            <div class="p-6 md:p-8 space-y-6">
+                <button onclick="goBack('page-main-menu')" class="text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Home
+                </button>
+
+                <div class="info-card info-card--soft">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.2em] text-gray-600">Credential status</p>
+                            {% if credential_verified %}
+                                <h2 class="text-2xl font-semibold text-gray-900">Verified for {{ credential_verified.first_name }} {{ credential_verified.last_name }}</h2>
+                                <p class="text-sm text-gray-700">Student ID {{ credential_verified.student_id }} is locked to this session.</p>
+                                {% if credential_verified.expires_at %}
+                                    <p class="text-xs text-gray-600 mt-1">Expires {{ credential_verified.expires_at }}.</p>
+                                {% endif %}
+                            {% else %}
+                                <h2 class="text-2xl font-semibold text-gray-900">Verification required</h2>
+                                <p class="text-sm text-gray-700">Import the signed JSON credential from the security desk to continue.</p>
+                            {% endif %}
+                        </div>
+                        <span class="status-pill text-xs px-3 py-1 {% if credential_verified %}bg-emerald-50 text-emerald-600{% else %}bg-amber-50 text-amber-600{% endif %}">
+                            {% if credential_verified %}
+                                Bound
+                            {% else %}
+                                Pending
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="mt-4 flex flex-col gap-3 w-full">
+                        {% if credential_verified %}
+                            <button type="button" onclick="showPage('page-signup-start')" class="cta-btn cta-btn--primary">
+                                Continue to signup
+                            </button>
+                        {% else %}
+                            <button type="button" onclick="showPage('page-verification-request')" class="cta-btn cta-btn--primary">
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    Request verification
+                                </span>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="info-card" id="step1-card">
+                    <div class="step-pill">
+                        <span>Step 1</span>
+                        <span>Load credential</span>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Import your signed NUST certificate</h2>
+                        <p class="text-sm text-gray-700 mt-1">Upload the issuer JSON. It never leaves this tab.</p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button type="button" class="cta-btn cta-btn--ghost-primary" onclick="document.getElementById('credential-file').click()">
+                            Choose credential file
+                        </button>
+                        <span id="credential-file-status" class="text-xs text-center text-gray-700">No file chosen</span>
+                    </div>
+                    <p class="text-xs text-gray-500 text-center">Example: <span class="font-mono">S123456_credential.json</span></p>
+                    <input id="credential-file" type="file" accept="application/json" class="sr-only" />
+                    <div id="credential-alert" class="hidden rounded-lg px-4 py-3 text-sm"></div>
+                    <div id="credential-preview" class="hidden">
+                        <div class="bg-white rounded-lg p-4 shadow-inner">
+                            <p class="text-xs text-gray-500">Student</p>
+                            <p class="text-lg font-semibold text-gray-900" id="preview-student"></p>
+                            <p class="text-xs text-gray-500 mt-2">Issued</p>
+                            <p class="text-sm text-gray-800" id="preview-issued"></p>
+                        </div>
+                        <span class="status-pill bg-green-100 text-green-700 mt-3" id="preview-status">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Credential ready locally
+                        </span>
+                    </div>
+                </div>
+
+                <div class="info-card info-card--soft">
+                    <div class="step-pill">
+                        <span>Step 2</span>
+                        <span>Prove it</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900">Generate zero-knowledge proof</h3>
+                        <p class="text-sm text-gray-700 mt-1">We check the HMAC locally, then ship only the proof.</p>
+                    </div>
+                    <div id="proof-alert" class="hidden rounded-lg px-4 py-3 text-sm"></div>
+                    <button id="generate-proof" class="cta-btn cta-btn--ghost-primary" disabled>
+                        <span id="proof-spinner" class="spinner hidden"></span>
+                        <span id="proof-button-text">Generate Proof (coming soon)</span>
+                    </button>
+                    <div class="text-sm text-center text-gray-600" id="proof-status">Upload a credential to unlock this step.</div>
+                </div>
+
+                <div class="info-card info-card--soft">
+                    <div class="step-pill">
+                        <span>Step 3</span>
+                        <span>Finish</span>
+                    </div>
+                    {% if credential_verified %}
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900">Credential verified ✔</h3>
+                            <p class="text-sm text-gray-700 mt-1">Signup is bound to {{ credential_verified.first_name }} {{ credential_verified.last_name }} ({{ credential_verified.student_id }}).</p>
+                            {% if credential_verified.certificate_id %}
+                                <p class="text-xs text-gray-600 mt-2">Certificate ID: <span class="font-mono">{{ credential_verified.certificate_id }}</span></p>
+                            {% endif %}
+                        </div>
+                        <button onclick="showPage('page-signup-start')" class="cta-btn cta-btn--terminal">Finish & continue</button>
+                    {% else %}
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900">Finish after verification</h3>
+                            <p class="text-sm text-gray-700 mt-1">Complete Steps 1 and 2 to unlock the form.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div id="page-verification-request" class="page hidden">
+            <div class="p-6 md:p-8 space-y-6">
+                <button onclick="goBack('page-credential')" class="text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Verification
+                </button>
+
+                <div class="info-card info-card--soft space-y-3">
+                    <p class="step-pill">Request Credential &bull; Fast Track</p>
+                    <h2 class="text-2xl font-semibold text-gray-900">Ask security to mint your JSON credential</h2>
+                    <p class="text-sm text-gray-700">Fill this quick form so the desk can prepare your signed credential before you arrive in person.</p>
+                </div>
+
+                <form action="{{ url_for('request_verification') }}" method="POST" class="info-card space-y-4">
+                    {{ verification_request_form.hidden_tag() }}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            {{ verification_request_form.student_id.label(class="block text-xs font-semibold text-gray-700 mb-1") }}
+                            {{ verification_request_form.student_id(class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400", placeholder="S123456") }}
+                            {% for error in verification_request_form.student_id.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div>
+                            {{ verification_request_form.section.label(class="block text-xs font-semibold text-gray-700 mb-1") }}
+                            {{ verification_request_form.section(class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400") }}
+                            {% for error in verification_request_form.section.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            {{ verification_request_form.first_name.label(class="block text-xs font-semibold text-gray-700 mb-1") }}
+                            {{ verification_request_form.first_name(class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400", placeholder="Adeel") }}
+                            {% for error in verification_request_form.first_name.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div>
+                            {{ verification_request_form.last_name.label(class="block text-xs font-semibold text-gray-700 mb-1") }}
+                            {{ verification_request_form.last_name(class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400", placeholder="Khan") }}
+                            {% for error in verification_request_form.last_name.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        {{ verification_request_form.email.label(class="block text-xs font-semibold text-gray-700 mb-1") }}
+                        {{ verification_request_form.email(class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400", placeholder="you@campus.edu") }}
+                        {% for error in verification_request_form.email.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div>
+                        {{ verification_request_form.notes.label(class="block text-xs font-semibold text-gray-700 mb-1") }}
+                        {{ verification_request_form.notes(class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400", rows="4", placeholder="Share timing needs, counselor contact, or other context") }}
+                        {% for error in verification_request_form.notes.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+                    {{ verification_request_form.submit(class="cta-btn cta-btn--success cursor-pointer") }}
+                </form>
+            </div>
+        </div>
+
+        <!-- 
+          Page 2: Login Form
+        -->
+        <div id="page-login" class="page hidden">
+           <div class="p-6 md:p-8">
+                <button onclick="goBack('page-main-menu')" class="text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center mb-4">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Home
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">Portal Login</h2>
+                <p class="text-gray-500 mt-1">Use your faculty email or student ID to sign in.</p>
+                
+                <form class="mt-6 space-y-4" action="{{ url_for('login') }}" method="POST">
+                    {{ login_form.hidden_tag() }} 
+                    
+                    <div>
+                        {{ login_form.login_identifier.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ login_form.login_identifier(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="e.g., S123456 or name@school.edu", autocomplete="username") }}
+                        {% for error in login_form.login_identifier.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    <div>
+                        {{ login_form.password.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ login_form.password(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="••••••••", autocomplete="current-password") }}
+                        {% for error in login_form.password.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    
+                    {{ login_form.submit(class="w-full bg-gray-900 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-gray-800 transition duration-300 cursor-pointer") }}
+                </form>
+                
+                <div class="text-center mt-4">
+                    <button onclick="showPage('page-signup-start')" class="text-sm text-gray-700 hover:text-gray-900 font-medium">
+                        Don't have an account? Sign Up
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-signup-start" class="page hidden">
+            <div class="p-6 md:p-8">
+                <button onclick="goBack('page-main-menu')" class="text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center mb-4">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Home
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">Create Student Account</h2>
+                <div class="mt-4 rounded-lg border {% if credential_verified %}border-emerald-200 bg-emerald-50{% else %}border-amber-200 bg-amber-50{% endif %} p-4 space-y-2">
+                    {% if credential_verified %}
+                        <p class="font-medium text-emerald-800">Verified credential detected for {{ credential_verified.first_name }} {{ credential_verified.last_name }} ({{ credential_verified.student_id }}).</p>
+                        <p class="text-sm text-emerald-700">Student ID and name fields are now locked to the attested values. Need to update them? Re-run verification.</p>
+                        <p class="text-sm text-emerald-700">Enter the authentication key from your credential JSON to prove possession.</p>
+                        {% if credential_verified.expires_at %}
+                            <p class="text-xs text-emerald-600">Token expires {{ credential_verified.expires_at }}.</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="font-medium text-amber-800">Zero-knowledge credential required.</p>
+                        <p class="text-sm text-amber-700">Before submitting this form, import your signed credential JSON on the verification page.</p>
+                        <button type="button" onclick="showPage('page-credential')" class="w-full bg-amber-500 text-gray-900 font-semibold py-2 rounded-lg shadow hover:bg-amber-600 transition">Launch Credential Verifier</button>
+                    {% endif %}
+                </div>
+                
+                <form class="mt-6 space-y-4" action="{{ url_for('signup') }}" method="POST" id="signup-form" autocomplete="on">
+                    {{ signup_form.hidden_tag() }}
+                    
+                     <div>
+                        {{ signup_form.student_id.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ signup_form.student_id(class='w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 ' + ('bg-gray-50 cursor-not-allowed' if credential_verified else ''), placeholder="e.g., S123456", autocomplete="username", readonly="readonly" if credential_verified else None) }}
+                        {% for error in signup_form.student_id.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            {{ signup_form.first_name.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                            {{ signup_form.first_name(class='w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 ' + ('bg-gray-50 cursor-not-allowed' if credential_verified else ''), placeholder="John", autocomplete="given-name", readonly="readonly" if credential_verified else None) }}
+                            {% for error in signup_form.first_name.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                        </div>
+                        <div>
+                            {{ signup_form.last_name.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                            {{ signup_form.last_name(class='w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 ' + ('bg-gray-50 cursor-not-allowed' if credential_verified else ''), placeholder="Doe", autocomplete="family-name", readonly="readonly" if credential_verified else None) }}
+                            {% for error in signup_form.last_name.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        {{ signup_form.auth_key.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ signup_form.auth_key(class='w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white/90 backdrop-blur placeholder-gray-400', placeholder="Enter authentication key") }}
+                        {% for error in signup_form.auth_key.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    <div>
+                        {{ signup_form.email.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ signup_form.email(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="john.doe@school.edu", autocomplete="email") }}
+                        {% for error in signup_form.email.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            {{ signup_form.section.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                            {{ signup_form.section(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white appearance-none") }}
+                            {% for error in signup_form.section.errors %}
+                                <p class="form-error">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        <div>
+                            {{ signup_form.counselor_email.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                            {{ signup_form.counselor_email(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white appearance-none") }}
+                            {% for error in signup_form.counselor_email.errors %}
+                                <p class="form-error">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                     <div>
+                        {{ signup_form.password.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ signup_form.password(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="••••••••", autocomplete="new-password") }}
+                        {% for error in signup_form.password.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                     <div>
+                        {{ signup_form.password_confirm.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ signup_form.password_confirm(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="••••••••", autocomplete="new-password") }}
+                        {% for error in signup_form.password_confirm.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    
+                    <!-- === WEBCAM SECTION (Signup) === -->
+                    <div>
+                        {{ signup_form.face_image_base64.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        
+                        <!-- Renders hidden input with name="face_image_base64" -->
+                        {{ signup_form.face_image_base64() }} 
+                        
+                        <div id="video-container-signup" class="my-2">
+                            <video id="video-signup" class="webcam-video" autoplay playsinline></video>
+                        </div>
+                        <div id="preview-container-signup" class="my-2 hidden">
+                            <img id="preview-signup" class="webcam-preview" alt="Face Capture" />
+                            <p class="text-sm text-gray-600 text-center mt-2">Captured Photo. Click "Retake" to try again.</p>
+                        </div>
+                        <canvas id="canvas-signup" class="webcam-canvas"></canvas>
+                        <div class="flex space-x-2">
+                             <button type="button" id="capture-signup" class="w-full bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 transition duration-300"> Capture Photo </button>
+                             <button type="button" id="retake-signup" class="w-full bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 transition duration-300 hidden"> Retake </button>
+                        </div>
+
+                        <p class="text-xs text-gray-500 mt-2">Your captured selfie is stored securely for counselor review; no automated face match runs during signup.</p>
+
+                        {% for error in signup_form.face_image_base64.errors %}
+                            <p class="form-error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    <!-- === END OF WEBCAM SECTION === -->
+                    
+                    {{ signup_form.submit(class="w-full bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 cursor-pointer") }}
+                </form>
+
+                <div class="text-center mt-4">
+                    <button onclick="showPage('page-login')" class="text-sm text-gray-700 hover:text-gray-900 font-medium">
+                        Already have an account? Login
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 
+          Page 3: Logged-In Menu
+        -->
+        <div id="page-logged-in-menu" class="page hidden">
+           <div class="p-6 md:p-8 text-center">
+                {% if current_user.is_authenticated %}
+                    <h1 class="text-2xl font-bold text-gray-800">Welcome, {{ current_user.first_name }}!</h1>
+                {% else %}
+                    <h1 class="text-2xl font-bold text-gray-800">Welcome, Student!</h1>
+                {% endif %}
+                <p class="text-gray-500 mt-2">What would you like to do?</p>
+            </div>
+            
+            <div class="p-6 md:p-8 pt-0 space-y-4">
+                 <button onclick="showPage('page-sick-leave')" class="w-full flex items-center justify-between bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-lg hover:bg-gray-200 transition duration-300">
+                    <span class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Leave Request
+                    </span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                
+                <button onclick="showPage('page-complaint')" class="w-full flex items-center justify-between bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-lg hover:bg-gray-200 transition duration-300">
+                     <span class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                        Submit Issue / Complaint
+                    </span>
+                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                
+                <div class="pt-4">
+                    <a href="{{ url_for('logout') }}" class="w-full text-sm text-gray-500 hover:text-gray-700 font-medium">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 
+          Page 1a: Password Reset - Step 1 (FIXED)
+        -->
+        <div id="page-password-start" class="page hidden">
+           <div class="p-6 md:p-8">
+                <button onclick="goBack('page-main-menu')" class="text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center mb-4">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Home
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">Password Reset</h2>
+                <p class="text-gray-500 mt-1">Verify your Student ID and face to proceed.</p>
+                
+                <!-- FIXED id, FIXED action -->
+                <form class="mt-6 space-y-4" action="{{ url_for('verify_face_image_base64') }}" method="POST" autocomplete="off" id="password-reset-form">
+                    {{ password_form.hidden_tag() }}
+                    <div>
+                        {{ password_form.student_id.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ password_form.student_id(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="Enter your Student ID") }}
+                        {% for error in password_form.student_id.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    
+                    <!-- === WEBCAM SECTION (Using new field name) === -->
+                    <div>
+                        <!-- FIXED: Use the new field name from forms.py -->
+                        {{ password_form.verify_face_image_base64.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        
+                        <!-- FIXED: Use the new field name. This renders <input name="verify_face_image_base64"> -->
+                        {{ password_form.verify_face_image_base64() }} 
+                        
+                         <div id="video-container-verify" class="my-2">
+                            <video id="video-verify" class="webcam-video" autoplay playsinline></video>
+                        </div>
+                        <div id="preview-container-verify" class="my-2 hidden">
+                            <img id="preview-verify" class="webcam-preview" alt="Face Capture" />
+                            <p class="text-sm text-gray-600 text-center mt-2">Captured Photo. Click "Retake" to try again.</p>
+                        </div>
+                        <canvas id="canvas-verify" class="webcam-canvas"></canvas>
+                        <div class="flex space-x-2">
+                             <button type="button" id="capture-verify" class="w-full bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 transition duration-300"> Capture Photo </button>
+                             <button type="button" id="retake-verify" class="w-full bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 transition duration-300 hidden"> Retake </button>
+                        </div>
+
+                        <!-- FIXED: Use the new field name for errors -->
+                        {% for error in password_form.verify_face_image_base64.errors %}
+                            <p class="form-error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    <!-- === END OF WEBCAM SECTION === -->
+                    
+                    {{ password_form.submit(class="w-full bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 cursor-pointer") }}
+                </form>
+            </div>
+        </div>
+
+        <!-- 
+          Page 1c: Password Reset - Step 3
+        -->
+        <div id="page-password-new" class="page hidden">
+           <div class="p-6 md:p-8">
+                <h2 class="text-xl font-bold text-gray-800">Verification Complete!</h2>
+                <p class="text-gray-500 mt-1">Please enter your new password.</p>
+                
+                <form class="mt-6 space-y-4" action="{{ url_for('password_reset_set') }}" method="POST">
+                    {{ password_set_form.hidden_tag() }} 
+                    
+                    <div>
+                        {{ password_set_form.new_password.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ password_set_form.new_password(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="••••••••", autocomplete="new-password") }}
+                        {% for error in password_set_form.new_password.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    <div>
+                        {{ password_set_form.confirm_password.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ password_set_form.confirm_password(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", placeholder="••••••••", autocomplete="new-password") }}
+                        {% for error in password_set_form.confirm_password.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    {{ password_set_form.submit(class="w-full bg-gray-900 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-gray-800 transition duration-300 cursor-pointer") }}
+                </form>
+            </div>
+        </div>
+
+        <!-- 
+          Page 2a: Feature 2 - Upload Sick Leave
+        -->
+        <div id="page-sick-leave" class="page hidden">
+           <div class="p-6 md:p-8">
+                <button onclick="goBack('page-logged-in-menu')" class="text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center mb-4">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Portal
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">Leave Request</h2>
+                <p class="text-gray-500 mt-1">Upload a scan or photo of your medical certificate.</p>
+                
+                <form class="mt-6 space-y-4" action="{{ url_for('submit_leave') }}" method="POST" enctype="multipart/form-data">
+                    {{ leave_form.hidden_tag() }}
+                    
+                    <div class="mt-6">
+                        <label for="counselor-email" class="block text-sm font-medium text-gray-600 mb-1">Submitting to Counselor</label>
+                        <input type="text" id="counselor-email" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" 
+                               value="{% if current_user.is_authenticated %}{{ current_user.counselor_email }}{% endif %}" disabled>
+                        <p class="text-xs text-gray-400 mt-1">This is your registered counselor. Submissions are sent to them and a central admin email.</p>
+                    </div>
+                    
+                    <div>
+                        {{ leave_form.sick_leave_file.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ leave_form.sick_leave_file(class="w-full file-input") }}
+                        {% for error in leave_form.sick_leave_file.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    
+                    {{ leave_form.submit(class="w-full bg-gray-900 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-gray-800 transition duration-300 cursor-pointer") }}
+                </form>
+            </div>
+        </div>
+
+        <!-- 
+          Page 3a: Feature 3 - Submit Issue/Complaint
+        -->
+        <div id="page-complaint" class="page hidden">
+            <div class="p-6 md:p-8">
+                <button onclick="goBack('page-logged-in-menu')" class="text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center mb-4">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Portal
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">Submit Issue or Complaint</h2>
+                <p class="text-gray-500 mt-1">This will be sent to your assigned counselor.</p>
+                
+                <form class="mt-6 space-y-4" action="{{ url_for('submit_complaint') }}" method="POST">
+                    {{ complaint_form.hidden_tag() }}
+                    
+                    <div>
+                        {{ complaint_form.category.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ complaint_form.category(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white") }}
+                        {% for error in complaint_form.category.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    <div>
+                        {{ complaint_form.description.label(class="block text-sm font-medium text-gray-600 mb-1") }}
+                        {{ complaint_form.description(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500", rows="5", placeholder="Be as detailed as possible...") }}
+                        {% for error in complaint_form.description.errors %} <p class="form-error">{{ error }}</p> {% endfor %}
+                    </div>
+                    {{ complaint_form.submit(class="w-full bg-gray-900 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-gray-800 transition duration-300 cursor-pointer") }}
+                </form>
+            </div>
+        </div>
+        
+        </div> <!-- End page-container -->
+        </div> <!-- End flex-1 px-6 pb-6 -->
+
+        <!-- Footer with Contact Details -->
+        <footer class="bg-gray-100 text-gray-900 mt-auto border-t border-gray-200">
+            <div class="max-w-7xl mx-auto px-6 py-12">
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- About Section -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900">NUST Credential Portal</h3>
+                        <p class="text-sm text-gray-600">
+                            Zero-Knowledge Credential Issuance System<br>
+                            School of Electrical Engineering and Computer Science (SEECS)<br>
+                            National University of Sciences and Technology
+                        </p>
+                    </div>
+                    
+                    <!-- Quick Links -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900">Quick Links</h3>
+                        <ul class="space-y-2 text-sm text-gray-600">
+                            <li><a href="{{ url_for('issuer.dashboard') }}" class="hover:text-gray-900 transition">Issuer Console</a></li>
+                            <li><a href="https://nust.edu.pk" target="_blank" class="hover:text-gray-900 transition">NUST Website</a></li>
+                            <li><a href="https://seecs.nust.edu.pk" target="_blank" class="hover:text-gray-900 transition">SEECS Website</a></li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Contact Information -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900">Contact Us</h3>
+                        <ul class="space-y-3 text-sm text-gray-600">
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <a href="mailto:credentials@seecs.edu.pk" class="hover:text-gray-900 transition">credentials@seecs.edu.pk</a>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.040A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                <span>Secure Credential Verification</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <span>H-12, Islamabad, Pakistan</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-300 mt-8 pt-8 text-center text-sm text-gray-600">
+                    <p>&copy; 2025 NUST Credential Portal - Secure Certificate Issuance System. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- **************************************** -->
+    <!-- * UPDATED JAVASCRIPT LOGIC             * -->
+    <!-- **************************************** -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashRoot = document.getElementById('flash-root');
+            if (flashRoot) {
+                const alerts = flashRoot.querySelectorAll('[role="alert"]');
+                alerts.forEach(alert => {
+                    setTimeout(() => {
+                        alert.style.opacity = '0';
+                        alert.style.transform = 'translateY(-6px) scale(0.98)';
+                        setTimeout(() => alert.remove(), 500);
+                    }, 4000);
+                });
+            }
+        });
+
+        let lastPageId = 'page-main-menu';
+        let globalStream = null; 
+        let credentialData = null;
+
+        const ALERT_STYLES = {
+            success: 'bg-emerald-50 border border-emerald-200 text-emerald-800',
+            error: 'bg-rose-50 border border-rose-200 text-rose-800',
+            info: 'bg-gray-50 border border-gray-300 text-indigo-800'
+        };
+
+        function showInlineAlert(element, type, message) {
+            if (!element) return;
+            element.className = `rounded-lg px-4 py-3 text-sm ${ALERT_STYLES[type] || ALERT_STYLES.info}`;
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        function hideInlineAlert(element) {
+            if (!element) return;
+            element.classList.add('hidden');
+        }
+
+        function bufferToHex(buffer) {
+            return Array.from(new Uint8Array(buffer))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        async function buildPlaceholderProof(payload, nonce) {
+            const circuitPayload = payload?.payload ?? payload;
+            if (!circuitPayload?.proof_commitment) {
+                throw new Error('Credential missing proof commitment. Please request a refreshed credential JSON.');
+            }
+            if (!nonce) {
+                throw new Error('Challenge nonce missing.');
+            }
+
+            const encoder = new TextEncoder();
+            const data = encoder.encode(`${circuitPayload.proof_commitment}|${nonce}`);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return { nonce_commitment: bufferToHex(digest) };
+        }
+
+        function stopWebcam() {
+            if (globalStream) {
+                globalStream.getTracks().forEach(track => track.stop());
+                globalStream = null;
+            }
+        }
+
+        async function startWebcam(
+            videoId, captureBtnId, retakeBtnId, previewId, canvasId, 
+            hiddenInputName, 
+            videoContainerId, previewContainerId
+        ) {
+            const video = document.getElementById(videoId);
+            const captureBtn = document.getElementById(captureBtnId);
+            const retakeBtn = document.getElementById(retakeBtnId);
+            const preview = document.getElementById(previewId);
+            const canvas = document.getElementById(canvasId);
+            const hiddenInput = document.querySelector(`[name="${hiddenInputName}"]`); 
+            const videoContainer = document.getElementById(videoContainerId);
+            const previewContainer = document.getElementById(previewContainerId);
+
+            // Check if image already captured - don't reset if it exists
+            if (hiddenInput && hiddenInput.value && hiddenInput.value.startsWith('data:image')) {
+                // Image already captured, show preview instead
+                preview.src = hiddenInput.value;
+                videoContainer.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                captureBtn.classList.add('hidden');
+                retakeBtn.classList.remove('hidden');
+                console.log('Image already captured, showing preview instead of restarting webcam');
+                return; // Don't start webcam
+            }
+            
+            // Reset UI for fresh capture
+            videoContainer.classList.remove('hidden');
+            previewContainer.classList.add('hidden');
+            captureBtn.classList.remove('hidden');
+            retakeBtn.classList.add('hidden');
+            
+            if (hiddenInput) {
+                 hiddenInput.value = ''; // Clear old data
+            } else {
+                 console.error("Critical Error: Hidden input not found with name:", hiddenInputName);
+                 // We can't proceed if the hidden input isn't found.
+                 return; 
+            }
+
+            stopWebcam();
+
+            try {
+                globalStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 }, audio: false 
+                });
+                video.srcObject = globalStream;
+                video.play();
+            } catch (err) {
+                console.error("Error accessing webcam: ", err);
+                console.error("Could not access webcam. Please ensure permission is granted.");
+            }
+
+            // Capture button logic
+            captureBtn.onclick = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataURL = canvas.toDataURL('image/jpeg', 0.9); 
+                
+                preview.src = dataURL;
+                
+                if (hiddenInput) {
+                     hiddenInput.value = dataURL;
+                     console.log(`Set hidden input [name="${hiddenInputName}"] value (first 100 chars):`, dataURL.substring(0, 100) + '...');
+                } else {
+                     console.error("Critical Error: Hidden input lost during capture for name:", hiddenInputName);
+                }
+                
+                videoContainer.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                captureBtn.classList.add('hidden');
+                retakeBtn.classList.remove('hidden');
+                
+                stopWebcam();
+            };
+
+            // Retake button logic
+            retakeBtn.onclick = () => {
+                startWebcam( 
+                    videoId, captureBtnId, retakeBtnId, previewId, canvasId, 
+                    hiddenInputName, 
+                    videoContainerId, previewContainerId
+                );
+            };
+        }
+
+
+        function showPage(pageId) {
+            stopWebcam();
+            
+            document.querySelectorAll('.page').forEach(page => {
+
+                if (!page.classList.contains('hidden')) { lastPageId = page.id; }
+                page.classList.add('hidden');
+            });
+
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                targetPage.parentElement.scrollTop = 0;
+            } else {
+                document.getElementById('page-main-menu').classList.remove('hidden');
+            }
+
+            // --- START WEBCAM IF NEEDED (Using unique names now) ---
+            if (pageId === 'page-signup-start') {
+                startWebcam(
+                    'video-signup', 'capture-signup', 'retake-signup', 
+                    'preview-signup', 'canvas-signup', 
+                    'face_image_base64', // Name for signup field
+                    'video-container-signup', 'preview-container-signup'
+                );
+            } else if (pageId === 'page-password-start') {
+                 startWebcam(
+                    'video-verify', 'capture-verify', 'retake-verify', 
+                    'preview-verify', 'canvas-verify', 
+                    'verify_face_image_base64', // FIXED: New unique name for password reset field
+                    'video-container-verify', 'preview-container-verify'
+                );
+            }
+        }
+
+        function goBack(targetPage) {
+            showPage(targetPage);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialPage = '{{ show_page | default("page-main-menu") | safe }}';
+            showPage(initialPage);
+            
+            // --- DEBUGGING LISTENERS ---
+            const signupForm = document.getElementById('signup-form');
+            if (signupForm) {
+                signupForm.addEventListener('submit', function(event) {
+                    const hiddenInput = document.querySelector('[name="face_image_base64"]'); 
+                    console.log('Signup form submitting...');
+                    if (hiddenInput) {
+                        console.log('Signup: Value in hidden field just before submit:', hiddenInput.value.substring(0, 100) + '...'); 
+                        if (!hiddenInput.value) {
+                            console.error('Signup ERROR: Hidden field is empty before submit!');
+                        }
+                    } else {
+                         console.error('Signup ERROR: Cannot find hidden input field with name "face_image_base64"');
+                         event.preventDefault(); 
+                    }
+                });
+            }
+            
+            // Listener for password reset form
+            const passwordResetForm = document.getElementById('password-reset-form'); 
+            if (passwordResetForm) {
+                passwordResetForm.addEventListener('submit', function(event) {
+                    // FIXED: Find by the NEW unique name
+                    const hiddenInput = document.querySelector('[name="verify_face_image_base64"]'); 
+                    console.log('Password reset form submitting...');
+                    if (hiddenInput) {
+                        console.log('Password Reset: Value in hidden field just before submit:', hiddenInput.value.substring(0, 100) + '...'); 
+                        if (!hiddenInput.value) {
+                            console.error('Password Reset ERROR: Hidden field is empty before submit!');
+                        }
+                    } else {
+                         console.error('Password Reset ERROR: Cannot find hidden input field with name "verify_face_image_base64"');
+                         event.preventDefault(); 
+                    }
+                });
+            }
+            // --- END DEBUGGING ---
+
+            const credentialInput = document.getElementById('credential-file');
+            const previewCard = document.getElementById('credential-preview');
+            const previewStudent = document.getElementById('preview-student');
+            const previewIssued = document.getElementById('preview-issued');
+            const previewStatus = document.getElementById('preview-status');
+            const proofBtn = document.getElementById('generate-proof');
+            const proofStatus = document.getElementById('proof-status');
+            const credentialAlert = document.getElementById('credential-alert');
+            const proofAlert = document.getElementById('proof-alert');
+            const proofSpinner = document.getElementById('proof-spinner');
+            const proofButtonText = document.getElementById('proof-button-text');
+            const scrollToStep1Cta = document.getElementById('cta-scroll-step1');
+            const detailToggleButtons = document.querySelectorAll('[data-toggle-panel]');
+            const credentialFileStatus = document.getElementById('credential-file-status');
+
+            const setProofButtonLabel = (text) => {
+                if (proofButtonText) {
+                    proofButtonText.textContent = text;
+                }
+            };
+
+            const setProofButtonState = (state = 'idle') => {
+                if (!proofBtn) return;
+                proofBtn.classList.remove('cta-btn--primary', 'cta-btn--success');
+                if (!proofBtn.classList.contains('cta-btn--ghost-primary')) {
+                    proofBtn.classList.add('cta-btn--ghost-primary');
+                }
+                if (state === 'active') {
+                    proofBtn.classList.add('cta-btn--primary');
+                } else if (state === 'success') {
+                    proofBtn.classList.add('cta-btn--success');
+                }
+            };
+
+            const setProofButtonIdle = () => {
+                setProofButtonState('idle');
+                proofSpinner?.classList.add('hidden');
+            };
+
+            if (credentialInput) {
+                credentialInput.addEventListener('change', () => {
+                    const file = credentialInput.files?.[0];
+                    if (!file) {
+                        previewCard?.classList.add('hidden');
+                        proofBtn.disabled = true;
+                        proofStatus.textContent = 'Upload a credential to unlock this step.';
+                        hideInlineAlert(credentialAlert);
+                        hideInlineAlert(proofAlert);
+                        setProofButtonIdle();
+                        setProofButtonLabel('Generate Proof (coming soon)');
+                        credentialData = null;
+                        if (credentialFileStatus) {
+                            credentialFileStatus.textContent = 'No file chosen';
+                        }
+                        return;
+                    }
+                    if (credentialFileStatus) {
+                        credentialFileStatus.textContent = file.name;
+                    }
+
+                    showInlineAlert(credentialAlert, 'info', 'Reading credential file securely in your browser...');
+                    const reader = new FileReader();
+                    reader.onload = event => {
+                        try {
+                            const data = JSON.parse(event.target?.result);
+                            credentialData = data;
+                            previewStudent.textContent = `${data.payload?.first_name ?? data.first_name ?? 'Student'} ${data.payload?.last_name ?? data.last_name ?? ''}`.trim();
+                            const issuedAt = data.payload?.issued_at ?? data.issued_at ?? new Date().toISOString();
+                            previewIssued.textContent = issuedAt;
+                            previewStatus.textContent = data.payload?.university ?? data.university ?? 'Credential ready';
+                            previewCard.classList.remove('hidden');
+                            proofBtn.disabled = false;
+                            setProofButtonIdle();
+                            setProofButtonLabel('Generate Proof');
+                            proofStatus.textContent = 'Click generate to prove membership without exposing your ID.';
+                            showInlineAlert(credentialAlert, 'success', 'Credential looks valid. Continue to proof generation.');
+                            hideInlineAlert(proofAlert);
+                        } catch (error) {
+                            console.error('Invalid credential file', error);
+                            previewCard.classList.add('hidden');
+                            proofBtn.disabled = true;
+                            proofStatus.textContent = 'File must be a valid credential JSON issued by NUST.';
+                            showInlineAlert(credentialAlert, 'error', 'Could not parse credential. Please re-download it from the issuer desk.');
+                            hideInlineAlert(proofAlert);
+                            setProofButtonIdle();
+                            setProofButtonLabel('Generate Proof (coming soon)');
+                            credentialData = null;
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+
+            scrollToStep1Cta?.addEventListener('click', () => {
+                const stepCard = document.getElementById('step1-card');
+                if (stepCard) {
+                    stepCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
+            detailToggleButtons.forEach(button => {
+                const targetId = button.dataset.togglePanel;
+                if (!targetId) {
+                    return;
+                }
+                const panel = document.getElementById(targetId);
+                if (!panel) {
+                    return;
+                }
+                const labelSpan = button.querySelector('.toggle-label');
+                const icon = button.querySelector('.toggle-icon');
+                const defaultLabel = button.dataset.toggleLabel || labelSpan?.textContent || 'Show details';
+                const altLabel = button.dataset.toggleAlt || 'Hide details';
+                button.setAttribute('aria-expanded', 'false');
+                panel.setAttribute('aria-hidden', 'true');
+
+                button.addEventListener('click', () => {
+                    const wasHidden = panel.classList.contains('hidden');
+                    panel.classList.toggle('hidden');
+                    const nowVisible = wasHidden;
+                    if (labelSpan) {
+                        labelSpan.textContent = nowVisible ? altLabel : defaultLabel;
+                    }
+                    if (icon) {
+                        icon.style.transform = nowVisible ? 'rotate(180deg)' : 'rotate(0deg)';
+                    }
+                    button.setAttribute('aria-expanded', nowVisible ? 'true' : 'false');
+                    panel.setAttribute('aria-hidden', nowVisible ? 'false' : 'true');
+                });
+            });
+
+            proofBtn?.addEventListener('click', async () => {
+                if (!credentialData) {
+                    return;
+                }
+
+                proofBtn.disabled = true;
+                proofSpinner?.classList.remove('hidden');
+                setProofButtonState('active');
+                setProofButtonLabel('Generating...');
+                proofStatus.textContent = 'Requesting challenge from verifier...';
+                showInlineAlert(proofAlert, 'info', 'Securely talking to verifier...');
+
+                try {
+                    const challengeResp = await fetch('{{ url_for("zkp.issue_challenge") }}');
+                    if (!challengeResp.ok) {
+                        throw new Error('Challenge request failed');
+                    }
+                    const challengeData = await challengeResp.json();
+
+                    proofStatus.textContent = 'Running placeholder circuit in-browser...';
+                    const proofPayload = await buildPlaceholderProof(credentialData.payload ?? credentialData, challengeData.nonce);
+
+                    proofStatus.textContent = 'Submitting credential proof to verifier...';
+                    const verifyResp = await fetch('{{ url_for("zkp.verify_proof") }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nonce: challengeData.nonce,
+                            credential: credentialData,
+                            proof: proofPayload
+                        })
+                    });
+
+                    const verifyJson = await verifyResp.json();
+                    if (!verifyResp.ok || !verifyJson.ok) {
+                        throw new Error(verifyJson.error || 'Verification failed');
+                    }
+
+                    proofSpinner?.classList.add('hidden');
+                    setProofButtonState('success');
+                    setProofButtonLabel('Proof Verified ✔');
+                    proofStatus.textContent = 'Credential verified! Redirecting you to the signup form...';
+                    showInlineAlert(proofAlert, 'success', 'Proof accepted. Signing you in to the registration flow.');
+                    setTimeout(() => {
+                        window.location.href = '{{ url_for("home", page="page-signup-start") }}';
+                    }, 600);
+                } catch (error) {
+                    console.error(error);
+                    proofSpinner?.classList.add('hidden');
+                    setProofButtonIdle();
+                    setProofButtonLabel('Generate Proof (retry)');
+                    proofStatus.textContent = error.message || 'Verification failed. Please try again.';
+                    showInlineAlert(proofAlert, 'error', proofStatus.textContent);
+                } finally {
+                    proofBtn.disabled = false;
+                }
+            });
+        });
+        
+        // Sidebar Toggle Function
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.getElementById('mainContent');
+            
+            sidebar.classList.toggle('closed');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            mainContent.classList.toggle('expanded');
+        }
+    </script>
+
+</body>
+</html>
+

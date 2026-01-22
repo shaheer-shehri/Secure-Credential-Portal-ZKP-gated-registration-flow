@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Issuer Console Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-black min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full glass rounded-lg p-6 shadow-2xl border border-gray-300/10 bg-white/90">
+        <div class="text-center mb-6">
+            <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Issuer Console</p>
+            <h1 class="text-2xl font-semibold text-slate-900 mt-2">Faculty Authentication</h1>
+            <p class="text-sm text-gray-400 mt-1">Only registered faculty/staff can access the credential issuer.</p>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-3 p-3 rounded-lg border {{ 'border-rose-300 bg-rose-50 text-rose-700' if category == 'danger' else 'border-green-300 bg-emerald-50 text-emerald-700' }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST" class="space-y-4">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.email.label(class='block text-sm font-medium text-slate-600 mb-1') }}
+                {{ form.email(class='w-full rounded-lg border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-indigo-500 bg-white/80') }}
+                {% for error in form.email.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+                {{ form.password.label(class='block text-sm font-medium text-slate-600 mb-1') }}
+                {{ form.password(class='w-full rounded-lg border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-indigo-500 bg-white/80') }}
+                {% for error in form.password.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+            </div>
+            {{ form.submit(class='w-full bg-indigo-600 text-gray-900 font-semibold py-3 rounded-lg shadow-lg hover:bg-gray-800 transition cursor-pointer') }}
+        </form>
+        <a href="{{ url_for('home') }}" class="block text-center text-xs text-gray-500 mt-4">← Back to student portal</a>
+    </div>
+</body>
+</html>

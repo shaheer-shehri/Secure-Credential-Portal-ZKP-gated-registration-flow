@@ -1,0 +1,12 @@
+# Virtual environments
+.venv_fr/
+venv/
+
+# Local environment overrides
+.env
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/

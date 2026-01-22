@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NUST Credential Wallet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-black text-gray-900">
+    <div class="max-w-4xl mx-auto px-4 py-10 space-y-6">
+        <header class="text-center space-y-2">
+            <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Student Credential Wallet</p>
+            <h1 class="text-3xl font-semibold">{{ payload.get('first_name', 'Student') }}'s Verified Certificate</h1>
+            <p class="text-gray-500">
+                Present this screen (or the QR code) to any verifier. They can scan to open this wallet and launch the NUST Zero-Knowledge check.
+            </p>
+        </header>
+
+        {% if status == 'revoked' %}
+        <div class="bg-rose-500/20 border border-rose-400 text-rose-100 p-4 rounded-lg">
+            <p class="font-semibold">Revoked Credential</p>
+            <p class="text-sm">This credential has been revoked by the issuer. Please contact the department for assistance.</p>
+        </div>
+        {% endif %}
+
+        <section class="grid md:grid-cols-2 gap-6">
+            <div class="glass rounded-lg p-6 bg-white/5 border border-gray-300/10 space-y-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Identity</p>
+                    <p class="text-lg font-semibold text-gray-900 mt-1">{{ payload.get('first_name') }} {{ payload.get('last_name') }}</p>
+                    <p class="text-gray-500 text-sm">{{ payload.get('student_id', record.student_id) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Program</p>
+                    <p class="text-gray-900 text-lg">{{ payload.get('program', '—') }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-gray-500">Certificate ID</p>
+                        <p class="font-mono text-gray-900 break-all">{{ record.certificate_id or '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-gray-500">Valid Until</p>
+                        <p class="text-gray-900">{{ record.expires_at.strftime('%Y-%m-%d %H:%M UTC') if record.expires_at else '—' }}</p>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500">
+                    <p>Status: <span class="font-semibold {{ 'text-emerald-300' if status == 'active' else 'text-red-700' }}">{{ status|capitalize }}</span></p>
+                    <p>Issuer: NUST SEECS • Faculty of Computing</p>
+                </div>
+            </div>
+            <div class="bg-white text-slate-900 rounded-lg p-6 border border-slate-100 flex flex-col items-center space-y-3 shadow-2xl">
+                <p class="text-xs uppercase tracking-[0.05em] text-gray-400">Scan to verify</p>
+                <img src="{{ wallet_qr_url }}" alt="Credential QR" class="w-48 h-48" />
+                <p class="text-sm text-center text-slate-600">Use any verifier device to scan and open this wallet link.</p>
+                <button id="copy-wallet" class="w-full bg-gray-100 text-gray-900 rounded-lg py-2 font-semibold">Copy wallet link</button>
+                <a href="{{ verifier_url }}" class="w-full bg-indigo-600 text-gray-900 rounded-lg py-2 font-semibold text-center hover:bg-gray-800 transition">Launch Zero-Knowledge Verification</a>
+            </div>
+        </section>
+
+        <section class="bg-white/5 border border-gray-300/10 rounded-lg p-6 space-y-3">
+            <p class="text-xs uppercase tracking-[0.05em] text-gray-600">Proof Package Snapshot</p>
+            <pre class="text-sm bg-black/40 rounded-lg p-4 overflow-x-auto">{{ payload | tojson(indent=2) }}</pre>
+            <p class="text-xs text-gray-500">Authentication key is not displayed for safety. Students must remember or securely store the shared secret from the issuer.</p>
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('copy-wallet')?.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                const btn = document.getElementById('copy-wallet');
+                const original = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = original, 1600);
+            } catch (err) {
+                console.error('Clipboard failed', err);
+            }
+        });
+    </script>
+</body>
+</html>
