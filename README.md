@@ -52,7 +52,7 @@ Biometric matching occurs **only during issuer credential minting**. Webcam capt
 
 ## System Requirements
 
-- Python 3.10 or higher
+- Python 3.7 or 3.8  (the face recognition library setup works best under these conditions)
 - SQLite (default) or any SQLAlchemy-supported database
 - System dependencies for `dlib` / `face_recognition`
   - CMake
